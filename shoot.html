@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Shoot!</title>
+    <style>
+        /* CSS styles */
+
+        /* Adjust SVG size as needed */
+        svg {
+            cursor: pointer;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+
+        }
+        .displayCOn {
+            display: flex;
+            justify-content: left;
+            align-items: center;
+            height: 90vh;
+        }
+        .aiming-line {
+            stroke-width: 7;
+            stroke: black;
+        }
+        .infoDisplay {
+            position: fixed;
+            top: 0;
+            right: 0;
+            padding: 20px;
+            background-color: beige;
+            border: 1px solid darkblue;
+        }
+    </style>
+</head>
+<body>
+    <!-- heading -->
+    <h1>Shoot!</h1>
+
+    <!-- container for display class -->
+    <div class="displayCOn">
+        
+    </div>
+    <!-- information display -->
+    <div class="infoDisplay">
+        <!-- delta vals -->
+        <h2>Delta Values:</h2>
+        <p>Delta X: <span id="deltaX">0</span></p>
+        <p>Delta Y: <span id="deltaY">0</span></p>
+        <!-- position vals -->
+        <h2>Positions:</h2>
+        <p>Cursor X: <span id="cursorX">0</span></p>
+        <p>Cursor Y: <span id="cursorY">0</span></p>
+        <p>Cue Ball X: <span id="cueBallX">0</span></p>
+        <p>Cue Ball Y: <span id="cueBallY">0</span></p>
+        <!-- player names -->
+        <h2>Players:</h2>
+        <p>Player 1: <span id="player1"></span></p>
+        <p>Player 2: <span id="player2"></span></p>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            //initlaize player parameters
+            initalize();
+            //initialize the table
+            setTable();
+        });
+        function initalize() {
+            //retreive the names from the url
+            const urlParams = new URLSearchParams(window.location.search);
+            //set the player names
+            const player1 = urlParams.get('player1name');
+            const player2 = urlParams.get('player2name');
+            //display the player names  on screen
+            $('#player1').text(player1);
+            $('#player2').text(player2);
+        }
+        function setTable() {
+            //make an ajax request to retreive the initla svg table 
+            $.ajax({
+                url: "/init_table",
+                type: "GET",
+                dataType: "text",
+                //if it works display the svg and create event handler
+                success: function (svgContent) {
+                    $('.displayCOn').html(svgContent);
+                    eventHandler();
+                },
+                //if it doesnt throw an error 
+                error: function (xhr, status, error) {
+                    console.error("Error retreiving table", status, error);
+                    $('.displayCOn').text("Failed to set up the table");
+                }
+            });            
+        }
+
+        function eventHandler() {
+            // initialize and declare vairables
+            //svg and cue ball
+            const cueBall = document.getElementById('cue-ball'); // ids are set in Physics
+            const svg = document.getElementById('poolTable');
+            //initial values for x and y when clicked
+            let initX;
+            let initY;
+            //and the aiming line
+            let aimingLine = null;
+
+            function drawLine() {
+                //create line
+                aimingLine = document.createElementNS("http://www.w3.org/2000/svg", 'line');
+                //set its class attribute and style it
+                aimingLine.setAttribute('class', 'aiming-line');
+            }
+
+            function drawAimingLine(startX, startY, endX, endY) {
+                //checks that line doesn't already exist
+                if (!aimingLine) {
+                    //if it doesnt then it draw the line
+                    drawLine()
+                    //the line is appended to the svg 
+                    svg.appendChild(aimingLine);
+                }
+                
+                //sets the attributes for the line using the function parameters
+                aimingLine.setAttribute('x1', startX);
+                aimingLine.setAttribute('y1', startY);
+                aimingLine.setAttribute('x2', endX);
+                aimingLine.setAttribute('y2', endY);
+            }
+
+            function updateDelta(event) {
+                //get the bounded range of svg
+                const rect = svg.getBoundingClientRect();
+                //calculate the difference between the current andinitial mouse positions
+                const diffX = (event.clientX - rect.left) * (svg.viewBox.baseVal.width / svg.clientWidth) - initX;
+                const diffY = (event.clientY - rect.top) * (svg.viewBox.baseVal.height / svg.clientHeight) - initY;
+                //now update the dispalyed values of delta
+                $('#deltaX').text(Math.round(diffX));
+                $('#deltaY').text(Math.round(diffY));
+            }
+
+            function handleMouseDown(event) {
+                //checks if the mouse is clicked on the cueBall
+                if (event.target === cueBall) {
+                    //checks bounding 
+                    const rect = svg.getBoundingClientRect();
+                    //sets the  values of the inital x and y when the mouse is clicked
+                    initX = (event.clientX - rect.left) * (svg.viewBox.baseVal.width / svg.clientWidth);
+                    initY = (event.clientY - rect.top) * (svg.viewBox.baseVal.height / svg.clientHeight);
+                    //ads the event listener for mouse movement
+                    svg.addEventListener('mousemove', handleMouseMove);
+                }
+            }
+            
+            function handleMouseMove(event) {
+                //sets the bounding 
+                const rect = svg.getBoundingClientRect();
+                //get values for start and end (x,y)
+                let startX = parseFloat(cueBall.getAttribute('cx'));
+                let startY = parseFloat(cueBall.getAttribute('cy'));
+                //setup values for calculation of end x and end y
+                let tempX = svg.viewBox.baseVal.width / svg.clientWidth;
+                let tempY = svg.viewBox.baseVal.height / svg.clientHeight;
+                //intialize end x and caclulate it
+                let endX = (event.clientX - rect.left);
+                endX = endX * tempX;
+                //initialize end y and calculate
+                let endY = (event.clientY - rect.top);
+                endY = endY * tempY;
+
+                //draw the aim line with the gathered info
+                drawAimingLine(startX, startY, endX, endY);
+                
+                //update the cursor and cueball position 
+                $('#cursorX').text(Math.round(endX));
+                $('#cursorY').text(Math.round(endY));
+                $('#cueBallX').text(Math.round(startX));
+                $('#cueBallY').text(Math.round(startY));
+                //update the delta
+                updateDelta(event);
+            }
+
+            function handleMouseUp(event) {
+                //checks if aiming line exists
+                if (aimingLine) {
+                    removeLine();
+                    //remove the event listener as event is now over
+                    svg.removeEventListener('mousemove', handleMouseMove);
+                }
+            }
+            function removeLine() {
+                //removes it if it does
+                aimingLine.remove();
+                aimingLine = null;
+            }
+            //add the event listners for when mouse is pressed or unpressed
+            svg.addEventListener('mousedown', handleMouseDown);
+            svg.addEventListener('mouseup', handleMouseUp);
+        }
+
+    </script>
+</body>
+</html>
+

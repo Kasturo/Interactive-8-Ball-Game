@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu</title>
+    <style>
+        /* CSS styles */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        input[type="text"] {
+            width: 300px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #3394fb;
+            color: #ffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        /*submit button */
+        input[type="submit"]:hover {
+            background-color: #3394fb;
+        }
+    </style>
+</head>
+<body>
+    <!-- html form -->
+    <!-- title of page, asking to enter playernames -->
+    <h2>Enter names of Players</h2>
+    <!-- create form for submission with post request -->
+    <form action="/submit_menu" method="post">
+        <!-- player 1 input stuyff -->
+        <label for="player1name">Player 1 Name:</label>
+        <input type="text" id="player1name" name="player1name"><br>
+        <!-- player 2 input stuff -->
+        <label for="player2name">Player 2 Name:</label>
+        <input type="text" id="player2name" name="player2name"><br>
+        
+        <!-- submit button -->
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>
+
+
+
